@@ -1,9 +1,12 @@
 const assert = require('assert');
 const BattlefieldStats = require('battlefield-stats');
-const app = require('express')();
+const express = require('express');
+const app = express();
 const Jimp = require("jimp");
 const loadBaseAssets = require('./loadBaseAssets');
+const redis = require('redis');
 
+assert(process.env.REDIS_URL, 'Environment variable REDIS_URL is required');
 assert(process.env.TRN_API_KEY, 'Environment variable TRN_API_KEY is required');
 assert(process.env.PORT, 'Environment variable PORT is required');
 assert(process.env.IP || process.env.HOST, 'Either Environment variable IP or HOST required');
@@ -15,6 +18,7 @@ const apiKey = process.env.TRN_API_KEY;
 const host = process.env.IP || process.env.HOST;
 const port = process.env.PORT;
 const environment = process.env.NODE_ENV || 'development';
+const redisClient = redis.createClient(process.env.REDIS_URL, { return_buffers: true });
 
 const bf = new BattlefieldStats(apiKey);
 
@@ -22,57 +26,105 @@ function isNumeric(n) {
   return !isNaN(parseFloat(n)) && isFinite(n);
 }
 
+
+
 const setParams = (persona, params) => (isNumeric(persona))
   ? Object.assign({}, {personaId: persona}, params)
   : Object.assign({}, {displayName: persona}, params);
 
+const normalizePersona = (persona) => {
+  // failsafe that allows the persona to tail with .png for 3rd party apps
+  try {
+    return persona.indexOf('.png') === -1 ? persona : persona.split('.png')[0];
+  } catch (e) {
+    return persona;
+  }
+};
 
 function initialize ({ createBanner }, done) {
   app.get('/', function (req, res, next) {
     res.send({status: 'online'});
   });
 
-  app.use('/pc/:persona', function (req, res, next) {
-    if (!req.params.persona) return res.send({message: 'persona missing'});
-    const persona = req.params.persona.indexOf('.png') === -1 ? req.params.persona : req.params.persona.split('.png')[0];
-    bf.Stats.basicStats(setParams(persona, { platform: bf.Platforms.PC, }), (error, stats) => {
+  const simpleBanner = express.Router();
+  simpleBanner.get('/', function (req, res, next) {
+    res.send({status: 'online'});
+  });
+  simpleBanner.get('/pc/:image', function (req, res, next) {
+    req.persona = normalizePersona(req.params.image);
+    req.bfPlatform = bf.Platforms.PC;
+    req.bfParams = setParams(req.persona, { platform: bf.Platforms.PC });
+    next();
+  });
+
+  simpleBanner.get('/xbox/:image', function (req, res, next) {
+    req.persona = normalizePersona(req.params.image);
+    req.bfPlatform = bf.Platforms.XBOX;
+    req.bfParams = setParams(req.persona, { platform: bf.Platforms.XBOX });
+    next();
+  });
+
+  simpleBanner.get('/ps4/:image', function (req, res, next) {
+    req.persona = normalizePersona(req.params.image);
+    req.bfPlatform = bf.Platforms.PS4;
+    req.bfParams = setParams(req.persona, { platform: bf.Platforms.PS4 });
+    next();
+  });
+
+  // Check redis stats
+  simpleBanner.use(function (req, res, next) {
+    if (!req.bfParams) return next();
+    const simpleBannerKey = `${req.bfPlatform}_${req.persona}_simpleBanner`;
+    const statsKey = `${req.bfPlatform}_${req.persona}_stats`;
+
+    redisClient.get(statsKey, (error, cachedStats) => {
+      if (error || !cachedStats) return;
+      try {
+        req.bfStats = JSON.parse(cachedStats.toString());
+        redisClient.get(simpleBannerKey, (error, cachedImage) => {
+          if (error || !cachedImage) return;
+          req.image = cachedImage;
+          next();
+        });
+      } catch (e) {
+        return;
+      }
+    });
+
+    bf.Stats.basicStats(req.bfParams, (error, stats) => {
       if (error) return next(error);
-      if (req.params.persona.indexOf('.png') === -1) return res.send(stats);
       req.bfStats = stats;
       next();
     });
   });
 
-  app.use('/xbox/:persona', function (req, res, next) {
-    if (!req.params.persona) return res.send({message: 'persona missing'});
-    const persona = req.params.persona.indexOf('.png') === -1 ? req.params.persona : req.params.persona.split('.png')[0];
-    bf.Stats.basicStats(setParams(persona, { platform: bf.Platforms.XBOX, }), (error, stats) => {
-      if (error) return next(error);
-      if (req.params.persona.indexOf('.png') === -1) return res.send(stats);
-      req.bfStats = stats;
-      next();
-    });
-  });
+  simpleBanner.use(function (req, res, next) {
+    const dump = message => ({message, path: req.path, params: req.params, persona: req.persona, bfParams: req.bfParams});
 
-  app.use('/ps4/:persona', function (req, res, next) {
-    if (!req.params.persona) return res.send({message: 'persona missing'});
-    const persona = req.params.persona.indexOf('.png') === -1 ? req.params.persona : req.params.persona.split('.png')[0];
-      bf.Stats.basicStats(setParams(persona, { platform: bf.Platforms.PS4, }), (error, stats) => {
-        if (error) return next(error);
-        if (req.params.persona.indexOf('.png') === -1) return res.send(stats);
-        req.bfStats = stats;
-        next();
-      });
-  });
+    if (!req.persona && !req.bfParams) return res.send(400, dump('invalid request'));
+    if (!req.bfStats) return res.send(404, dump('Not found'));
 
-  app.use(function (req, res, next) {
-    if (!req.params.persona) return res.send({message: 'persona missing'});
+    res.type('png');
+    if (req.image) return res.end(req.image, 'binary');
+
     createBanner(req.bfStats, (err, binaryImageData) => {
       if (err) return next(err);
-      res.type('png');
       res.end(binaryImageData, 'binary');
+
+      const simpleBannerKey = `${req.bfPlatform}_${req.persona}_simpleBanner`;
+      const statsKey = `${req.bfPlatform}_${req.persona}_stats`;
+
+      redisClient.set(simpleBannerKey, binaryImageData);
+      redisClient.set(statsKey, JSON.stringify(req.bfStats));
+
+      const inTwentyFourHours = parseInt((+new Date)/1000) + 86400;
+
+      redisClient.expireat(simpleBannerKey, inTwentyFourHours);
+      redisClient.expireat(statsKey, inTwentyFourHours);
     });
   });
+
+  app.use('/simple-banner', simpleBanner);
   done(app);
 }
 

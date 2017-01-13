@@ -13,7 +13,10 @@
   "dependencies": {
     "battlefield-stats": "^1.0.8",
     "express": "^4.14.0",
-    "jimp": "^0.2.27"
+    "jimp": "^0.2.27",
+    "redis": "^2.6.4"
   },
-  "engines" : { "node" : ">=7.4.0" }
+  "engines": {
+    "node": ">=7.4.0"
+  }
 }

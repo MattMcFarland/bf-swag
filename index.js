@@ -24,6 +24,7 @@ const redisClient = redis.createClient(process.env.REDIS_URL, { return_buffers: 
 const bf = new BattlefieldStats(apiKey);
 
 storage.initSync({ttl: true});
+storage.clearSync();
 
 function persistData(key, value) {
   const inTwentyFourHours = parseInt((+new Date)/1000) + 86400;
@@ -93,8 +94,13 @@ function initialize ({ createBanner }, done) {
   simpleBanner.use(function getImageFromMemory (req, res, next) {
     storage.getItem(req.simpleBannerKey, (error, cachedImage) => {
       if (!error && cachedImage) {
-        res.type('jpg');
-        res.end(cachedImage, 'binary');
+        try {
+          res.type('jpg');
+          res.end(cachedImage, 'binary');
+        } catch (e) {
+          storage.removeItem(req.simpleBannerKey);
+          next();
+        }
       } else {
         next();
       }
@@ -119,15 +125,20 @@ function initialize ({ createBanner }, done) {
   simpleBanner.use(function pullStatsFromMemory (req, res, next) {
     storage.getItem(req.statsKey, (error, cachedStats) => {
       if (!error && cachedStats) {
-        createBanner(JSON.parse(cachedStats), (error, newImage) => {
-          if (!error && newImage) {
-            res.type('jpg');
-            res.end(newImage, 'binary');
-            persistData(req.simpleBannerKey, newImage);
-          } else {
-            next();
-          }
-        });
+        try {
+          createBanner(JSON.parse(cachedStats), (error, newImage) => {
+            if (!error && newImage) {
+              res.type('jpg');
+              res.end(newImage, 'binary');
+              persistData(req.simpleBannerKey, newImage);
+            } else {
+              next();
+            }
+          });
+        } catch (e) {
+          storage.removeItem(req.statsKey);
+          next();
+        }
       } else {
         next();
       }

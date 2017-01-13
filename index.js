@@ -5,6 +5,7 @@ const app = express();
 const Jimp = require("jimp");
 const loadBaseAssets = require('./loadBaseAssets');
 const redis = require('redis');
+const storage = require('node-persist');
 
 assert(process.env.REDIS_URL, 'Environment variable REDIS_URL is required');
 assert(process.env.TRN_API_KEY, 'Environment variable TRN_API_KEY is required');
@@ -22,11 +23,18 @@ const redisClient = redis.createClient(process.env.REDIS_URL, { return_buffers: 
 
 const bf = new BattlefieldStats(apiKey);
 
+storage.initSync({ttl: true});
+
+function persistData(key, value) {
+  const inTwentyFourHours = parseInt((+new Date)/1000) + 86400;
+  redisClient.set(key, value);
+  redisClient.expireat(key, inTwentyFourHours);
+  storage.setItem(key, value);
+}
+
 function isNumeric(n) {
   return !isNaN(parseFloat(n)) && isFinite(n);
 }
-
-
 
 const setParams = (persona, params) => (isNumeric(persona))
   ? Object.assign({}, {personaId: persona}, params)
@@ -50,10 +58,11 @@ function initialize ({ createBanner }, done) {
   simpleBanner.get('/', function (req, res, next) {
     res.send({status: 'online'});
   });
+
   simpleBanner.get('/pc/:image', function (req, res, next) {
     req.persona = normalizePersona(req.params.image);
     req.bfPlatform = bf.Platforms.PC;
-    req.bfParams = setParams(req.persona, { platform: bf.Platforms.PC });
+    req.bfParams = setParams(req.persona, { platform: req.bfPlatform });
     next();
   });
 
@@ -71,55 +80,96 @@ function initialize ({ createBanner }, done) {
     next();
   });
 
-  // Check redis stats
-  simpleBanner.use(function (req, res, next) {
-    if (!req.bfParams) return next();
-    const simpleBannerKey = `${req.bfPlatform}_${req.persona}_simpleBanner`;
-    const statsKey = `${req.bfPlatform}_${req.persona}_stats`;
-
-    redisClient.get(statsKey, (error, cachedStats) => {
-      if (error || !cachedStats) return;
-      try {
-        req.bfStats = JSON.parse(cachedStats.toString());
-
-        redisClient.get(simpleBannerKey, (error, cachedImage) => {
-          if (error || !cachedImage) return;
-          req.image = cachedImage;
-        });
-      } catch (e) {
-        return;
-      }
-    });
-    if (req.bfStats) return next();
-    bf.Stats.basicStats(req.bfParams, (error, stats) => {
-      if (error) return next(error);
-      const inTwentyFourHours = parseInt((+new Date)/1000) + 86400;
-      req.bfStats = stats;
-      redisClient.set(statsKey, JSON.stringify(req.bfStats));
-      redisClient.expireat(statsKey, inTwentyFourHours);
-      next();
-    });
-  });
-
   simpleBanner.use(function (req, res, next) {
     const dump = message => ({message, path: req.path, params: req.params, persona: req.persona, bfParams: req.bfParams});
 
     if (!req.persona && !req.bfParams) return res.send(400, dump('invalid request'));
-    if (!req.bfStats) return res.send(404, dump('Not found'));
-    console.log(req.bfStats);
-    res.type('jpg');
-    if (req.image) return res.end(req.image, 'binary');
+    req.statsKey = `${req.bfPlatform}_${req.persona}_bfStatsKey`;
+    req.simpleBannerKey = `${req.bfPlatform}_${req.persona}_bfSimpleBannerImageKey`;
+    next();
+  });
 
-    createBanner(req.bfStats, (err, binaryImageData) => {
-      if (err) return next(err);
-      res.end(binaryImageData, 'binary');
+  // Get image from memory
+  simpleBanner.use(function getImageFromMemory (req, res, next) {
+    storage.getItem(req.simpleBannerKey, (error, cachedImage) => {
+      if (!error && cachedImage) {
+        res.type('jpg');
+        res.end(cachedImage, 'binary');
+      } else {
+        next();
+      }
+    });
+  });
 
-      const simpleBannerKey = `${req.bfPlatform}_${req.persona}_simpleBanner`;
-      const inTwentyFourHours = parseInt((+new Date)/1000) + 86400;
+  // If image is not in memory, pull from redis
+  simpleBanner.use(function getImageFromRedis (req, res, next) {
+    redisClient.get(req.simpleBannerKey, (error, cachedImage) => {
+      if (!error && cachedImage) {
+        res.type('jpg');
+        res.end(cachedImage, 'binary');
+      } else {
+        next();
+      }
+    });
+  });
 
+  // Get stats so we can create the image from scratch
 
-      redisClient.set(simpleBannerKey, binaryImageData);
-      redisClient.expireat(simpleBannerKey, inTwentyFourHours);
+  // Pull stats from memory if they exist
+  simpleBanner.use(function pullStatsFromMemory (req, res, next) {
+    storage.getItem(req.statsKey, (error, cachedStats) => {
+      if (!error && cachedStats) {
+        createBanner(JSON.parse(cachedStats), (error, newImage) => {
+          if (!error && newImage) {
+            res.type('jpg');
+            res.end(newImage, 'binary');
+            persistData(req.simpleBannerKey, newImage);
+          } else {
+            next();
+          }
+        });
+      } else {
+        next();
+      }
+    });
+  });
+
+  // Pull stats from memory if they exist
+  simpleBanner.use(function pullStatsFromRedis (req, res, next) {
+    redisClient.get(req.statsKey, (error, cachedStats) => {
+      if (!error && cachedStats) {
+        createBanner(JSON.parse(cachedStats.toString()), (error, newImage) => {
+          if (!error && newImage) {
+            res.type('jpg');
+            res.end(newImage, 'binary');
+            persistData(req.simpleBannerKey, newImage);
+          } else {
+            next();
+          }
+        });
+      } else {
+        next();
+      }
+    });
+  });
+
+  // If stats are not in redis, then pull stats from TRN
+  simpleBanner.use(function pullStatsFromTRN (req, res, next) {
+    bf.Stats.basicStats(req.bfParams, (error, freshStats) => {
+      if (!error && freshStats) {
+        createBanner(freshStats, (error, newImage) => {
+          if (!error && newImage) {
+            res.type('jpg');
+            res.end(newImage, 'binary');
+            persistData(req.simpleBannerKey, newImage);
+            persistData(req.statsKey, JSON.stringify(freshStats));
+          } else {
+            next();
+          }
+        });
+      } else {
+        next();
+      }
     });
   });
 

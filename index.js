@@ -28,7 +28,7 @@ const setParams = (persona, params) => (isNumeric(persona))
 
 
 function initialize ({ createBanner }, done) {
-  app.use('/', function (req, res, next) {
+  app.get('/', function (req, res, next) {
     res.send({status: 'online'});
   });
 

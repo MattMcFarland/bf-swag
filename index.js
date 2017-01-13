@@ -1,5 +1,5 @@
 const BF = require('battlefield-stats');
-const bf = new BF('e88bbefd-ac05-489c-b142-edc24cc42fce');
+const bf = new BF(process.env.TRN_API_KEY);
 const app = require('express')();
 const Jimp = require("jimp");
 const loadBaseAssets = require('./loadBaseAssets');
@@ -90,9 +90,10 @@ function initBannerCreator (initCallback) {
 initBannerCreator((err, dependencies) => {
   if (err) throw new Error(err);
   initialize(dependencies, (app) => {
-    app.listen(8080, (err, res) => {
+    app.listen(process.env.PORT, process.env.HOST, (err, res) => {
       if (err) throw new Error(err);
       console.log('server initialized');
+      console.log(`Listening at ${process.env.HOST}:${process.env.PORT} in ${process.env.NODE_ENV}`);
     });
   });
 

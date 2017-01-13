@@ -14,5 +14,6 @@
     "battlefield-stats": "^1.0.8",
     "express": "^4.14.0",
     "jimp": "^0.2.27"
-  }
+  },
+  { "engines" : { "node" : ">=7.4.0" } }
 }

@@ -1,8 +1,22 @@
-const BF = require('battlefield-stats');
-const bf = new BF(process.env.TRN_API_KEY);
+const assert = require('assert');
+const BattlefieldStats = require('battlefield-stats');
 const app = require('express')();
 const Jimp = require("jimp");
 const loadBaseAssets = require('./loadBaseAssets');
+
+assert(process.env.TRN_API_KEY, 'Environment variable TRN_API_KEY is required');
+assert(process.env.PORT, 'Environment variable PORT is required');
+assert(process.env.IP || process.env.HOST, 'Either Environment variable IP or HOST required');
+
+if (!process.env.HOST) process.env.HOST = process.env.IP;
+if (!process.env.NODE_ENV) process.env.NODE_ENV = 'development';
+
+const apiKey = process.env.TRN_API_KEY;
+const host = process.env.IP || process.env.HOST;
+const port = process.env.PORT;
+const environment = process.env.NODE_ENV || 'development';
+
+const bf = new BattlefieldStats(apiKey);
 
 function isNumeric(n) {
   return !isNaN(parseFloat(n)) && isFinite(n);
@@ -14,7 +28,12 @@ const setParams = (persona, params) => (isNumeric(persona))
 
 
 function initialize ({ createBanner }, done) {
+  app.use('/', function (req, res, next) {
+    res.send({status: 'online'});
+  });
+
   app.use('/pc/:persona', function (req, res, next) {
+    if (!req.params.persona) return res.send({message: 'persona missing'});
     const persona = req.params.persona.indexOf('.png') === -1 ? req.params.persona : req.params.persona.split('.png')[0];
     bf.Stats.basicStats(setParams(persona, { platform: bf.Platforms.PC, }), (error, stats) => {
       if (error) return next(error);
@@ -25,6 +44,7 @@ function initialize ({ createBanner }, done) {
   });
 
   app.use('/xbox/:persona', function (req, res, next) {
+    if (!req.params.persona) return res.send({message: 'persona missing'});
     const persona = req.params.persona.indexOf('.png') === -1 ? req.params.persona : req.params.persona.split('.png')[0];
     bf.Stats.basicStats(setParams(persona, { platform: bf.Platforms.XBOX, }), (error, stats) => {
       if (error) return next(error);
@@ -35,6 +55,7 @@ function initialize ({ createBanner }, done) {
   });
 
   app.use('/ps4/:persona', function (req, res, next) {
+    if (!req.params.persona) return res.send({message: 'persona missing'});
     const persona = req.params.persona.indexOf('.png') === -1 ? req.params.persona : req.params.persona.split('.png')[0];
       bf.Stats.basicStats(setParams(persona, { platform: bf.Platforms.PS4, }), (error, stats) => {
         if (error) return next(error);
@@ -45,6 +66,7 @@ function initialize ({ createBanner }, done) {
   });
 
   app.use(function (req, res, next) {
+    if (!req.params.persona) return res.send({message: 'persona missing'});
     createBanner(req.bfStats, (err, binaryImageData) => {
       if (err) return next(err);
       res.type('png');
@@ -90,10 +112,10 @@ function initBannerCreator (initCallback) {
 initBannerCreator((err, dependencies) => {
   if (err) throw new Error(err);
   initialize(dependencies, (app) => {
-    app.listen(process.env.PORT, process.env.HOST, (err, res) => {
+    app.listen(port, host, (err, res) => {
       if (err) throw new Error(err);
       console.log('server initialized');
-      console.log(`Listening at ${process.env.HOST}:${process.env.PORT} in ${process.env.NODE_ENV}`);
+      console.log(`Listening at ${host}:${port} in ${environment}`);
     });
   });
 

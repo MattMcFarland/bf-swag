@@ -35,7 +35,7 @@ const setParams = (persona, params) => (isNumeric(persona))
 const normalizePersona = (persona) => {
   // failsafe that allows the persona to tail with .png for 3rd party apps
   try {
-    return persona.indexOf('.png') === -1 ? persona : persona.split('.png')[0];
+    return persona.indexOf('.jpg') === -1 ? persona : persona.split('.jpg')[0];
   } catch (e) {
     return persona;
   }
@@ -81,19 +81,22 @@ function initialize ({ createBanner }, done) {
       if (error || !cachedStats) return;
       try {
         req.bfStats = JSON.parse(cachedStats.toString());
+
         redisClient.get(simpleBannerKey, (error, cachedImage) => {
           if (error || !cachedImage) return;
           req.image = cachedImage;
-          next();
         });
       } catch (e) {
         return;
       }
     });
-
+    if (req.bfStats) return next();
     bf.Stats.basicStats(req.bfParams, (error, stats) => {
       if (error) return next(error);
+      const inTwentyFourHours = parseInt((+new Date)/1000) + 86400;
       req.bfStats = stats;
+      redisClient.set(statsKey, JSON.stringify(req.bfStats));
+      redisClient.expireat(statsKey, inTwentyFourHours);
       next();
     });
   });
@@ -103,8 +106,8 @@ function initialize ({ createBanner }, done) {
 
     if (!req.persona && !req.bfParams) return res.send(400, dump('invalid request'));
     if (!req.bfStats) return res.send(404, dump('Not found'));
-
-    res.type('png');
+    console.log(req.bfStats);
+    res.type('jpg');
     if (req.image) return res.end(req.image, 'binary');
 
     createBanner(req.bfStats, (err, binaryImageData) => {
@@ -112,15 +115,11 @@ function initialize ({ createBanner }, done) {
       res.end(binaryImageData, 'binary');
 
       const simpleBannerKey = `${req.bfPlatform}_${req.persona}_simpleBanner`;
-      const statsKey = `${req.bfPlatform}_${req.persona}_stats`;
-
-      redisClient.set(simpleBannerKey, binaryImageData);
-      redisClient.set(statsKey, JSON.stringify(req.bfStats));
-
       const inTwentyFourHours = parseInt((+new Date)/1000) + 86400;
 
+
+      redisClient.set(simpleBannerKey, binaryImageData);
       redisClient.expireat(simpleBannerKey, inTwentyFourHours);
-      redisClient.expireat(statsKey, inTwentyFourHours);
     });
   });
 
@@ -154,7 +153,8 @@ function initBannerCreator (initCallback) {
           .print(fonts.fontSm, 320, 80, kd)
           .print(fonts.fontStrokeMd, 410, 40, 'wins')
           .print(fonts.fontSm, 430, 80, winningPercentage)
-          .getBuffer( 'image/png', cb );
+          .quality(90)
+          .getBuffer( 'image/jpeg', cb );
       });
     };
     initCallback(null, { createBanner });

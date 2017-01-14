@@ -7,14 +7,9 @@ const http = require('http');
 const clientPath = require('path').join(__dirname, 'client');
 const renderStatic = require('./static');
 const bankai = require('bankai');
-const babelify = require('babelify');
-
 
 const assets = bankai(clientPath, {
   optimize: process.env.NODE_ENV === 'production',
-  js: {
-    transform: [babelify]
-  },
   html: {
     title: 'Battlefield Signature Swag - Swag for forums and such',
     script: '/swag.js',

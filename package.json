@@ -12,8 +12,15 @@
   "license": "ISC",
   "dependencies": {
     "battlefield-stats": "^1.0.8",
+    "choo": "^4.0.3",
+    "compression": "^1.6.2",
     "express": "^4.14.0",
     "jimp": "^0.2.27",
+    "level": "^1.5.0",
+    "level-ttl": "^3.1.1",
+    "leveldown": "^1.5.3",
+    "merry": "^4.0.0",
+    "method-override": "^2.3.7",
     "node-persist": "^2.0.7",
     "redis": "^2.6.4"
   },

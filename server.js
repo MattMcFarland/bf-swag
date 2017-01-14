@@ -1,9 +1,21 @@
+const assert = require('assert');
 const BattlefieldStats = require('battlefield-stats');
 const merry = require('merry');
 const Cache = require('./cache');
-const client = require('./client');
-const initBannerCreator = require('./bannerCreator');
+const initBannerCreator = require('./jimp/bannerCreator');
 const http = require('http');
+const clientPath = require('path').join(__dirname, 'client');
+//const client = require('./client');
+const bankai = require('bankai');
+const assets = bankai(clientPath, {
+  optimize: process.env.NODE_ENV === 'production',
+  html: {
+    title: 'Battlefield Signature Swag - Swag for forums and such',
+    script: '/swag.js',
+    css: '/swag.css',
+    head: require('./html-header-inject')
+  }
+});
 
 function initialize ({ createBanner }, readyUp) {
 
@@ -13,19 +25,27 @@ function initialize ({ createBanner }, readyUp) {
   const cache = Cache(app);
 
   app.router([
-    ['/', handleIndex],
+    ['/', render('html')],
+    ['/swag.css', render('css')],
+    ['/swag.js', render('js')],
+    ['/api', [
+      ['/stats', [
+        ['/pc/:personaIdOrDisplayName', mw([configureContextByPlatform('PC'), renderStats])],
+        ['/xbox/:personaIdOrDisplayName', mw([configureContextByPlatform('XBOX'), renderStats])],
+        ['/ps4/:personaIdOrDisplayName', mw([configureContextByPlatform('PS4'), renderStats])]
+      ]],
+    ]],
     ['/simple-banner', [
       ['/pc/:personaIdOrDisplayName', mw([configureContextByPlatform('PC'), renderSimpleBanner])],
       ['/xbox/:personaIdOrDisplayName', mw([configureContextByPlatform('XBOX'), renderSimpleBanner])],
       ['/ps4/:personaIdOrDisplayName', mw([configureContextByPlatform('PS4'), renderSimpleBanner])]
     ]],
-    ['/404', merry.notFound()]
+    ['/404', render('html')]
   ]);
 
-  function handleIndex (req, res, ctx, done) {
-    const html = client.toString('/', { message: 'hello server!' });
-    // res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    done(null, 'Hello world');
+  function render(method) {
+    assert(typeof assets[method] === 'function');
+    return (req, res, ctx, done) => done(null, assets[method](req, res).pipe(res));
   }
 
   function renderSimpleBanner (req, res, ctx, done) {
@@ -41,8 +61,11 @@ function initialize ({ createBanner }, readyUp) {
         res.setHeader('Content-Type', 'image/jpeg');
         res.end(imageData, done);
       }
-
     });
+  }
+
+  function renderStats (req, res, ctx, done) {
+    getStats(ctx, done);
   }
 
   function configureContextByPlatform (platform) {

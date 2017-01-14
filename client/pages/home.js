@@ -88,10 +88,10 @@ function searchForm (state, send) {
     <form onsubmit=${handleSubmit} class=${searchFormStyle}>
       <h2 class="hidden">Your sharable BF1 stats image for forums sites, blogs, and community pages.</h2>
       <fieldgroup>
-        <span class="pc${state.platform == 'pc' ? " active" : ""}"    onclick=${() => send('updatePlatform', 'pc')}><i class="socicon-windows"></i></span>
-        <span class="psn${state.platform == 'ps4' ? " active" : ""}"   onclick=${() => send('updatePlatform', 'ps4')}><i class="socicon-playstation"></i></span>
-        <span class="xbox${state.platform == 'xbox' ? " active" : ""}"  onclick=${() => send('updatePlatform', 'xbox')}><i class="socicon-xbox"></i></span>
-        <input id="searchField" onupdate=${e => send('updateSearchField', e.target.value)} autofocus="true" placeholder="Your ${platformUserName} user name or companion id..." value=${state.searchField}>
+        <span class="pc${state.platform == 'pc' ? " active" : ""}"    onclick=${function () {send('updatePlatform', 'pc')}}><i class="socicon-windows"></i></span>
+        <span class="psn${state.platform == 'ps4' ? " active" : ""}"   onclick=${function () {send('updatePlatform', 'ps4')}}><i class="socicon-playstation"></i></span>
+        <span class="xbox${state.platform == 'xbox' ? " active" : ""}"  onclick=${function () {send('updatePlatform', 'xbox')}}><i class="socicon-xbox"></i></span>
+        <input id="searchField" onupdate=${function (e) { send('updateSearchField', e.target.value)}} autofocus="true" placeholder="Your ${platformUserName} user name or companion id..." value=${state.searchField}>
       </fieldgroup>
     </form>
     `

@@ -4,16 +4,18 @@ const merry = require('merry');
 const Cache = require('./cache');
 const initBannerCreator = require('./jimp/bannerCreator');
 const http = require('http');
-const url = require('url');
 const clientPath = require('path').join(__dirname, 'client');
 const renderStatic = require('./static');
 const bankai = require('bankai');
-const es2020 = require('es2020');
+const babelify = require('babelify');
+
 
 const assets = bankai(clientPath, {
   optimize: process.env.NODE_ENV === 'production',
+  js: {
+    transform: [babelify]
+  },
   html: {
-    js: {transform: ['es2020']},
     title: 'Battlefield Signature Swag - Swag for forums and such',
     script: '/swag.js',
     css: '/swag.css',

@@ -1,0 +1,72 @@
+
+/* -------  Global classes */
+
+body, html {
+    background: #272727;
+    color: #aaa;
+}
+a {
+    color: #f17f1a;
+    text-decoration: none;
+    transition: 0.5s;
+}
+a:hover {
+    color: white;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+p, header, footer, span {
+    color: #aaa;
+    background: transparent;
+}
+
+input:focus, textarea:focus, keygen:focus, select:focus {
+    outline-offset: -2px;
+    outline: #f17f1a auto 5px;
+}
+
+/* Reset `button` and button-style `input` default styles */
+button {
+    display: inline;
+    background: none;
+    border: 0;
+    color: inherit;
+    /* cursor: default; */
+    font: inherit;
+    line-height: normal;
+    overflow: visible;
+    padding: 0;
+    -webkit-appearance: button; /* for input */
+    -webkit-user-select: none; /* for button */
+       -moz-user-select: none;
+        -ms-user-select: none;
+}
+
+.box-info, .box-success, .box-warning, .box-error {
+    margin: 10px 0px;
+    padding:12px;
+    display: inline-block;
+}
+.box-info {
+    color: #00529B;
+    background-color: #BDE5F8;
+}
+.box-success {
+    color: #4F8A10;
+    background-color: #DFF2BF;
+}
+.box-warning {
+    color: #9F6000;
+    background-color: #FEEFB3;
+}
+.box-error {
+    color: #D8000C;
+    background-color: #FFBABA;
+}
+
+/* -------  Utility classes */
+.hidden { visibility: hidden!important; height: 0!important; margin: 0!important; padding: 0!important; }
+.text-align-center { text-align: center; }
+.text-align-left { text-align: left; }
+.text-sm { font-size: 14px; }

@@ -4,12 +4,16 @@ const merry = require('merry');
 const Cache = require('./cache');
 const initBannerCreator = require('./jimp/bannerCreator');
 const http = require('http');
+const url = require('url');
 const clientPath = require('path').join(__dirname, 'client');
-//const client = require('./client');
+const renderStatic = require('./static');
 const bankai = require('bankai');
+const es2020 = require('es2020');
+
 const assets = bankai(clientPath, {
   optimize: process.env.NODE_ENV === 'production',
   html: {
+    js: {transform: ['es2020']},
     title: 'Battlefield Signature Swag - Swag for forums and such',
     script: '/swag.js',
     css: '/swag.css',
@@ -28,6 +32,7 @@ function initialize ({ createBanner }, readyUp) {
     ['/', render('html')],
     ['/swag.css', render('css')],
     ['/swag.js', render('js')],
+    ['/assets/:file', renderStatic],
     ['/api', [
       ['/stats', [
         ['/pc/:personaIdOrDisplayName', mw([configureContextByPlatform('PC'), renderStats])],
@@ -40,8 +45,9 @@ function initialize ({ createBanner }, readyUp) {
       ['/xbox/:personaIdOrDisplayName', mw([configureContextByPlatform('XBOX'), renderSimpleBanner])],
       ['/ps4/:personaIdOrDisplayName', mw([configureContextByPlatform('PS4'), renderSimpleBanner])]
     ]],
-    ['/404', render('html')]
+    ['/404', merry.notFound()]
   ]);
+
 
   function render(method) {
     assert(typeof assets[method] === 'function');

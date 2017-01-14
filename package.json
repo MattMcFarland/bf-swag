@@ -16,6 +16,7 @@
     "bel": "^4.5.1",
     "choo": "^4.0.3",
     "compression": "^1.6.2",
+    "es2020": "^1.1.9",
     "express": "^4.14.0",
     "jimp": "^0.2.27",
     "level": "^1.5.0",
@@ -26,7 +27,10 @@
     "node-persist": "^2.0.7",
     "normalize.css": "^5.0.0",
     "redis": "^2.6.4",
-    "sheetify": "^6.0.1"
+    "sheetify": "^6.0.1",
+    "vex-dialog": "^1.0.6",
+    "vex-js": "^3.0.0",
+    "xhr": "^2.3.3"
   },
   "engines": {
     "node": ">=7.4.0"

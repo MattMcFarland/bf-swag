@@ -7,6 +7,7 @@ const http = require('http');
 const clientPath = require('path').join(__dirname, 'client');
 const renderStatic = require('./static');
 const bankai = require('bankai');
+const keenStream = require('./keenStream');
 
 const assets = bankai(clientPath, {
   optimize: process.env.NODE_ENV === 'production',
@@ -21,7 +22,7 @@ const assets = bankai(clientPath, {
 function initialize ({ createBanner }, readyUp) {
 
   const bf = new BattlefieldStats(process.env.TRN_API_KEY);
-  const app = merry();
+  const app = merry({logStream: keenStream });
   const mw = merry.middleware;
   const cache = Cache(app);
 
@@ -54,13 +55,15 @@ function initialize ({ createBanner }, readyUp) {
   function renderSimpleBanner (req, res, ctx, done) {
     getSimpleBannerImageData (ctx, (error, imageData) => {
       if (error || !imageData) {
+        let t1 = Date.now();
+        app.log.info({name: 'renderSimpleBanner', duration: t1-ctx.t0, ctx, status: 'failure', info: error});
         return done(error || new Error('Unknown'));
       }
       if (res._header) {
         app.log.warn('headers were already sent');
       } else {
-        const t1 = Date.now();
-        app.log.info({name: 'renderSimpleBanner', time: t1-ctx.t0});
+        let t1 = Date.now();
+        app.log.info({name: 'renderSimpleBanner', duration: t1-ctx.t0, ctx, status: 'success'});
         res.setHeader('Content-Type', 'image/jpeg');
         res.end(imageData, done);
       }
@@ -100,7 +103,7 @@ function initialize ({ createBanner }, readyUp) {
     cache.get(statsKey, (error, cachedStats) => {
       if (error || !cachedStats) {
          bf.Stats.basicStats(ctx.bfParams, (error, freshStats) => {
-           app.log.info({name: 'bfApi', params: ctx.bfParams});
+           app.log.info({name: 'bfApi', ctx});
            if (error || !freshStats) {
              return cb(merry.error({statusCode: 404, message: ""}), null);
            }
@@ -129,7 +132,7 @@ function initialize ({ createBanner }, readyUp) {
           const t0 = Date.now();
           createBanner(stats, (error, newImage) => {
             const t1 = Date.now();
-            app.log.debug({name: 'createBanner', time: t1 - t0});
+            app.log.info({name: 'createBanner', duration: t1 - t0, ctx});
             if (error || !newImage) {
               return cb(error, null);
             }

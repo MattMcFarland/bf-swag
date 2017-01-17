@@ -60,15 +60,17 @@ app.model({
         return done();
       }
       send('searching', true, function () {
-        xhr.get('/simple-banner/' + state.platform + '/' + data + '.jpg', function (err, res, body) {
+        var relativeUrl = '/simple-banner/' + state.platform + '/' + encodeURI(data) + '.jpg';
+        var fullUrl = 'https://bf-swag.herokuapp.com' + relativeUrl;
+
+        xhr.get(relativeUrl, function (err, res, body) {
           if (err || res.statusCode === 404) {
             send('searchError', {status: res.statusCode, field: data}, done);
           } else {
             send('reset', true, function () {
-              var copyPasta='[url=https://bf-swag.herokuapp.com][img]https://bf-swag.herokuapp.com/simple-banner/' + state.platform + '/' + data + '.jpg[/img][/url]'
-                            .trim();
+              var copyPasta='[url=https://bf-swag.herokuapp.com][img]' + fullUrl + '[/img][/url]';
               vex.dialog.alert({message: 'Huzza!', input: '<div class="result">' +
-                '<img src="/simple-banner/' + state.platform + '/' + data + '.jpg"/>' +
+                '<img src="' + relativeUrl + '"/>' +
                 '<p>Copy the code below and paste it where you wish to show the image</p>' +
                 '<p>BBCODE:</p>' +
                 '<textarea style="font-size: 16px; font-family: monospace;" rows="3" readonly="true" onclick="this.setSelectionRange(0, this.value.length)">' + copyPasta + '</textarea>' +

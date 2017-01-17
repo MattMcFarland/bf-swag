@@ -5,6 +5,12 @@ body, html {
     background: #272727;
     color: #aaa;
 }
+body {
+    padding: 8px;
+}
+img {
+    max-width: 100%;
+}
 a {
     color: #f17f1a;
     text-decoration: none;

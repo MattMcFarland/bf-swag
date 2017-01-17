@@ -3,8 +3,8 @@ var html = require('choo/html');
 var note = require('../elements/note');
 var headingStyle = css`
   :host { max-width: 960px; margin: 0 auto; }
-  :host header { margin-bottom: 34px; }
-  :host h1 { font-size: 6em; color: #f17f1a; margin: 1em 0 0.5em 0;}
+  :host header { margin-bottom: 2em; }
+  :host h1 { color: #f17f1a; margin: 1em 0 0.5em 0;}
 `;
 
 var footerStyle = css`
@@ -109,9 +109,10 @@ module.exports = function homeView (state, prev, send) {
     return html`
       <main class=${headingStyle}>
         <header class="text-align-center">
-          <h1>bfSwag</h1>
+          <h1 style="font-size: ${window.innerWidth > 500 ? 6 : 3}em; ">bfSwag</h1>
           <p>Battlefield 1 forum or bb stats signatures powered by <a href="https://battlefieldtracker.com/">Battlfield Tracker Network</a></p>
           ${state.errorMessage ? note('error', state.errorMessage) : ''}
+          ${state.errorMessage && state.platform !== 'pc' ? html`<p>In some cases we cannot get info from ${state.platform} users. You can use your companion ID or generate a name from TRN by <a href="https://trackernetwork.freshdesk.com/support/solutions/articles/19000037920-can-t-find-battlefield-1-stats">clicking here</a></p>` : ''}
           ${state.searching ? progress : searchForm(state, send)}
         </header>
         <section class="text-align-left ${exampleStyle}">

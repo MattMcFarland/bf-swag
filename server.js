@@ -150,7 +150,7 @@ function initialize ({ createBanner }, readyUp) {
   readyUp(app);
 }
 
-module.exports = function (done) {
+function start (done) {
   const host = process.env.IP || process.env.HOST;
   const port = process.env.PORT;
   const environment = process.env.NODE_ENV || 'development';
@@ -161,9 +161,10 @@ module.exports = function (done) {
       const server = http.createServer(app.start());
       server.listen(process.env.PORT, process.env.HOST, 0, (err) => {
         if (err) return done(err, null);
-        return done(null, (`started and listening at ${host}:${port} in ${environment}`));
+        return done(null, (`Server online and listening at ${host}:${port} in ${environment}`));
       });
     });
   });
 };
 
+module.exports = { start };

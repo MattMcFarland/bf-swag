@@ -10,16 +10,16 @@ const fonts = {
   fontStrokeMd: resolvePath(__dirname, 'fonts/bf-stroke/font-bf-stroke-md.fnt'),
   fontStrokeSm: resolvePath(__dirname, 'fonts/bf-stroke/font-bf-stroke-sm.fnt'),
   fontStrokeXs: resolvePath(__dirname, 'fonts/bf-stroke/font-bf-stroke-xs.fnt')
-}
+};
 
 function loadFonts (cb) {
-  console.log(fonts);
+  console.log('Loading bitmap fonts....');
   const promises = Object.keys(fonts).map(fontKey => Jimp.loadFont(fonts[fontKey]));
   Promise.all(promises).then(values => {
     const resolvedFonts = Object.keys(fonts).reduce((acc, key, index) => {
-      acc[key] = values[index]
+      acc[key] = values[index];
       return acc;
-    }, {})
+    }, {});
     cb(null, resolvedFonts);
   });
 }
@@ -39,7 +39,8 @@ module.exports = function (cb) {
       const baseImg = image.clone()
         .cover(500, 150, Jimp.HORIZONTAL_ALIGN_CENTER | Jimp.VERTICAL_ALIGN_MIDDLE)
         .color([{apply: 'darken', params: ['20']}]);
-        cb(null, { baseImg, fonts });
+      console.log('Banner creation service initialized...');
+      cb(null, { baseImg, fonts });
     });
   });
-}
+};

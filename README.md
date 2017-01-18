@@ -15,6 +15,7 @@ Instead of hard-coding any configuration, this standalone application uses envir
 </thead>
 <tbody>
 <tr><td>TRN_API_KEY</td><td>Required API Key required to comminucate with battlefieldtracker.com</td></tr>
+<tr><td>NODE_ENV</td><td>Use "production" for an optimized version, anything else is considered "development" (is "development" by default)</td></tr>
 <tr><td>HOST</td><td>Optional domain host - falls back to IP</td></tr>
 <tr><td>IP</td><td>Optional ip - falls back to 0.0.0.0</td></tr>
 <tr><td>PORT</td><td>Optional port - falls back to 3000</td></tr>

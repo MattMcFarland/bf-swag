@@ -13,6 +13,7 @@ const fonts = {
 }
 
 function loadFonts (cb) {
+  console.log(fonts);
   const promises = Object.keys(fonts).map(fontKey => Jimp.loadFont(fonts[fontKey]));
   Promise.all(promises).then(values => {
     const resolvedFonts = Object.keys(fonts).reduce((acc, key, index) => {
@@ -25,10 +26,16 @@ function loadFonts (cb) {
 
 
 module.exports = function (cb) {
+  console.log('Initializing banner creation service...');
   loadFonts((err, fonts) => {
     if (err) return cb(err, null);
+    console.log('Bitmap fonts loaded!');
+    console.log('Loading base background....');
     Jimp.read(resolvePath(__dirname, "base_bg.png"), function (err, image) {
-      if (err) return cb(err, null);
+      if (err) {
+        console.log(err);
+        return cb(err, null);
+      }
       const baseImg = image.clone()
         .cover(500, 150, Jimp.HORIZONTAL_ALIGN_CENTER | Jimp.VERTICAL_ALIGN_MIDDLE)
         .color([{apply: 'darken', params: ['20']}]);

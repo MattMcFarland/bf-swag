@@ -2,9 +2,23 @@ const levelup = require('level');
 const ttl = require('level-ttl');
 const Redis = require('redis');
 
+function configureRedis(url, options) {
+  // if url is not passed in, we create NO-OPs so we just slide to using local cache and bfApi.
+  if (!url) {
+    return {
+      get: (key, cb) => typeof(cb) === 'function' ? cb(true) : true,
+      set: (key, cb) => typeof(cb) === 'function' ? cb(true) : true,
+      ttl: (key, ttl, cb) => typeof(cb) === 'function' ? cb(true) : true,
+      expireat: (key, cb) => typeof(cb) === 'function' ? cb(true) : true,
+    }
+  } else {
+    return Redis.createClient(url, options);
+  }
+}
+
 function Cache (app) {
   const db = levelup(`/tmp/cache.db`, {valueEncoding: 'binary'});
-  const redis = Redis.createClient(process.env.REDIS_URL, { return_buffers: true });
+  const redis = configureRedis(process.env.REDIS_URL, { return_buffers: true });
   const local = ttl(db);
 
   function get (key, cb) {

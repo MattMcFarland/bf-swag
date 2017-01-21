@@ -165,10 +165,11 @@ function initialize ({ createBanner }, readyUp) {
           const t0 = Date.now();
           createBanner(stats, (error, newImage) => {
             const t1 = Date.now();
-            app.log.info({name: 'createBanner', duration: t1 - t0, ctx});
             if (error || !newImage) {
+              app.log.info({name: 'createBanner', status: 'failure', duration: t1 - t0, ctx});
               return cb(error, null);
             }
+            app.log.info({name: 'createBanner', status: 'success', duration: t1 - t0, ctx});
             cache.set(simpleBannerKey, newImage);
             cb(null, newImage);
           });

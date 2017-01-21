@@ -31,6 +31,7 @@ function initialize ({ createBanner }, readyUp) {
     ['/swag.css', render('css')],
     ['/swag.js', render('js')],
     ['/assets/:file', renderStatic],
+    ['/demo.jpg',renderDemo],
     ['/api', [
       ['/stats', [
         ['/pc/:personaIdOrDisplayName', mw([configureContextByPlatform('PC'), renderStats])],
@@ -47,6 +48,38 @@ function initialize ({ createBanner }, readyUp) {
   ]);
 
 
+  function renderDemo(req, res, ctx, done) {
+    const names = ['Ravic', 'JackFrags', 'TrenchBoss', 'PENTA-piidde', 'Minidoracat', 'twitchtvSoltek1H', 'PENTA-Fish', 'Gen-Odyssey'];
+    const name = names[Math.floor(Math.random()*names.length)];
+    const demo = {
+      "t0": Date.now(),
+      "params": {
+        "personaIdOrDisplayName": `${name}.jpg`
+        },
+      "persona": name,
+      "bfPlatform": 3,
+      "bfParams": {
+        "displayName": name,
+        "platform": 3
+      }
+    };
+
+    getSimpleBannerImageData (demo, (error, imageData) => {
+      if (error || !imageData) {
+        let t1 = Date.now();
+        app.log.info({name: 'renderSimpleBanner', duration: t1-ctx.t0, ctx, status: 'failure', info: error});
+        return done(error || new Error('Unknown'));
+      }
+      if (res._header) {
+        app.log.warn('headers were already sent');
+      } else {
+        let t1 = Date.now();
+        app.log.info({name: 'renderSimpleBanner', duration: t1-ctx.t0, ctx, status: 'success'});
+        res.setHeader('Content-Type', 'image/jpeg');
+        res.end(imageData, done);
+      }
+    });
+  }
   function render(method) {
     assert(typeof assets[method] === 'function');
     return (req, res, ctx, done) => done(null, assets[method](req, res).pipe(res));

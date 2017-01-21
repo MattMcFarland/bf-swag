@@ -117,7 +117,7 @@ module.exports = function homeView (state, prev, send) {
         </header>
         <section class="text-align-left ${exampleStyle}">
           <p>Get a forum sig that looks like this:</p>
-          <img src="https://bf-swag.herokuapp.com/simple-banner/pc/SFr_TrenchBoss.jpg"/>
+          <img src="/demo.jpg"/>
         </section>
         <footer class=${footerStyle}>
         <p class="text-sm">© 2017 Matt McFarland - Carefully crafted with ${'<3'} by <a href="https://github.com/MattMcFarland/">Matt McFarland</a></p>

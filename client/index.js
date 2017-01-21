@@ -20,7 +20,17 @@ document.addEventListener('click', function (e) {
     e.setSelectionRange(0, e.value.length);
   }
 });
+
+
 var app = choo();
+
+function track(key, data) {
+  if (typeof window !== 'undefined' && window.keen) {
+    window.keen.addEvent(key, data);
+  } else {
+    return;
+  }
+}
 
 app.model({
   state: {
@@ -61,14 +71,17 @@ app.model({
       }
       send('searching', true, function () {
         var relativeUrl = '/simple-banner/' + state.platform + '/' + encodeURI(data) + '.jpg';
-        var fullUrl = 'https://bf-swag.herokuapp.com' + relativeUrl;
+        var domainUrl = window.location.protocol + '//' + window.location.hostname;
+        var fullUrl = domainUrl + relativeUrl;
 
         xhr.get(relativeUrl, function (err, res, body) {
           if (err || res.statusCode === 404) {
+            track('search', { input: data, status: 'failure', url: 'null' });
             send('searchError', {status: res.statusCode, field: data}, done);
           } else {
             send('reset', true, function () {
-              var copyPasta='[url=https://bf-swag.herokuapp.com][img]' + fullUrl + '[/img][/url]';
+              var copyPasta='[url=' + domainUrl + '][img]' + fullUrl + '[/img][/url]';
+              track('search', { input: data, status: 'success', url: fullUrl });
               vex.dialog.alert({message: 'Huzza!', input: '<div class="result">' +
                 '<img src="' + relativeUrl + '"/>' +
                 '<p>Copy the code below and paste it where you wish to show the image</p>' +

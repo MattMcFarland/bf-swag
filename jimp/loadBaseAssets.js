@@ -31,14 +31,14 @@ module.exports = function (cb) {
     if (err) return cb(err, null);
     console.log('Bitmap fonts loaded!');
     console.log('Loading base background....');
-    Jimp.read(resolvePath(__dirname, "base_bg.png"), function (err, image) {
+    Jimp.read(resolvePath(__dirname, "rendition1.img.jpg"), function (err, image) {
       if (err) {
         console.log(err);
         return cb(err, null);
       }
       const baseImg = image.clone()
         .cover(500, 150, Jimp.HORIZONTAL_ALIGN_CENTER | Jimp.VERTICAL_ALIGN_MIDDLE)
-        .color([{apply: 'darken', params: ['20']}]);
+        .color([{apply: 'darken', params: ['15']}]);
       console.log('Banner creation service initialized...');
       cb(null, { baseImg, fonts });
     });

@@ -6,7 +6,7 @@ function bannerCreator (initCallback) {
     if (err) return initCallback(err, null);
     const createBanner = (stats, cb) => {
       if (!stats) return cb(new Error("stats undefined", null));
-
+      if (!stats.result) return cb(new Error("result undefined", null));
       Jimp.read(stats.bbPrefix + stats.result.rank.imageUrl.split('[BB_PREFIX]')[1], (err, rankImage) => {
         if (err) return cb(err, null);
         const fittedRankImage = rankImage.clone().resize(150, 150);

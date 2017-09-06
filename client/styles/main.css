@@ -76,3 +76,100 @@ button {
 .text-align-center { text-align: center; }
 .text-align-left { text-align: left; }
 .text-sm { font-size: 14px; }
+
+/* -------  Site Main */
+.site-main {
+    max-width: 960px; margin: 0 auto;
+}
+.site-main header {
+    margin-bottom: 2em;
+}
+.site-main h1 {
+    color: #f17f1a;
+    margin: 0.5em 0 0.5em 0;
+    font-size: 3em;
+}
+
+/* -------  Site Footer */
+.site-footer {
+    max-width: 960px;
+    margin: 40px auto;
+    padding: 40px 0;
+}
+
+/* -------  Example Banner */
+.example-banner {
+    max-width: 500px;
+    text-align: left;
+    margin: 50px auto 0 auto;
+}
+
+.search-form {
+    display: block;
+}
+.search-form fieldgroup {
+    position: relative;
+    border-collapse: separate;
+    display: inline-table;
+    vertical-align: middle;
+    width: 90%;
+    max-width: 600px;
+}
+.search-form span, .search-form input {
+    font-size: 14px;
+    width: auto;
+    display: table-cell;
+    background: transparent;
+    color: grey;
+    background: white;
+    min-width: 22px;
+    line-height: 2.6em;
+    height: 2.6em;
+    overflow: hidden;
+    cursor: pointer;
+    border: thin solid white;
+    white-space: nowrap;
+    vertical-align: middle;
+    border-collapse: separate;
+    border-radius: 8px;
+}
+.search-form span {
+    color: #999;
+}
+.search-form span > i {
+    margin-top: 3px;
+    display: block;
+    margin-bottom: -4px;
+}
+.search-form input {
+    width: 100%;
+    padding-left: 0.5em;
+}
+.search-form span:not(:first-child):not(:last-child), .search-form input:not(:first-child):not(:last-child) {
+    border-radius: 0;
+}
+.search-form span:first-child, .search-form input:first-child {
+    border-right: 0;
+    border-bottom-right-radius: 0;
+    border-top-right-radius: 0;
+}
+.search-form span:last-child, .search-form input:last-child {
+    border-right: 0;
+    border-bottom-left-radius: 0;
+    border-top-left-radius: 0;
+}
+.search-form span.active.pc { color: #00AEF0; }
+.search-form span.active.psn { color: #003791; }
+.search-form span.active.xbox { color: #107c10; }
+
+@media (min-width: 768px) {
+    .site-main h1 {
+        font-size: 6em;
+        margin: 1em 0 0.5em 0;
+    }
+    .search-form span, .search-form input {
+        font-size: 20px;
+        line-height: 2.2em;
+        height: 2.2em;
+    }
+}

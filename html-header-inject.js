@@ -10,6 +10,7 @@ const keensScripts = `
 `;
 
 module.exports = `
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://file.myfontastic.com/n6vo44Re5QaWo8oCKShBs7/icons.css" rel="stylesheet">
 ${process.env.KEEN_PROJECT_ID && process.env.KEEN_WRITE_KEY ? keensScripts : ''}
 `;
